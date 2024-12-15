@@ -1,18 +1,4 @@
-create.apm.play_by_play_data = function(play_by_play_data = NULL, players_data = NULL,
-                           remove_goalies = TRUE,
-                           collapse_off = FALSE,
-                           collapse_def = FALSE,
-                           from_league_avg = FALSE) {
-  
-  if (collapse_off == TRUE & collapse_def == TRUE){
-    stop("Cannot collapse both offense and defense.")
-  }
-
-  # Put play_by_play_data in long form first, seems non-intuitive but makes use of xtabs
-  # (fairly fast way to create sparse design matrix) 
-  # play_by_play_data one row per player-shift, "key" is unique identifier for each shift
-  
-  # First, put in long format
+get.player.order <- function(play_by_play_data, players_data) {
   home_players <- play_by_play_data %>%
     select(key, starts_with("home_on"), sec, home_id) %>%
     pivot_longer(cols = starts_with("home_on")) %>%
@@ -40,6 +26,27 @@ create.apm.play_by_play_data = function(play_by_play_data = NULL, players_data =
   players_data <- players_data[!duplicated(players_data$player), ]
   players_data <- players_data[with(players_data, order(team_id, position_type)), ]
   
+  return(players_data$player)
+}
+
+create.apm.play.by.play <- function(play_by_play_data = NULL,
+                                    players_data = NULL,
+                                    remove_goalies = TRUE,
+                                    collapse_off = FALSE,
+                                    collapse_def = FALSE,
+                                    from_league_avg = FALSE) {
+  
+  if (collapse_off == TRUE & collapse_def == TRUE){
+    stop("Cannot collapse both offense and defense.")
+  }
+
+  # Put play_by_play_data in long form first, seems non-intuitive but makes use of xtabs
+  # (fairly fast way to create sparse design matrix) 
+  # play_by_play_data one row per player-shift, "key" is unique identifier for each shift
+  
+  # First, put in long format
+  player_order <- get.player.order(play_by_play_data, players_data)
+  
   long_data <- play_by_play_data %>% 
     arrange(key) %>% 
     select(key, starts_with("home_on"), starts_with("away_on")) %>%
@@ -47,15 +54,15 @@ create.apm.play_by_play_data = function(play_by_play_data = NULL, players_data =
                  names_to = "ha",
                  values_to = "player") %>%
     mutate(ha = gsub("_.+", "", ha), 
-           player = factor(player, levels = players_data$player))
+           player = factor(player, levels = player_order))
   
   # Home and away players
   xh = long_data %>% filter(ha == "home")
   xa = long_data %>% filter(ha == "away")
   
   # Score differentials for home and away team
-  sh = play_by_play_data  %>% select(key, home_score_diff)
-  sa = play_by_play_data  %>% select(key, away_score_diff)
+  sh = play_by_play_data %>% select(key, home_score_diff)
+  sa = play_by_play_data %>% select(key, away_score_diff)
   sh = sh %>% mutate(home_score_diff = case_when(home_score_diff > 0 ~ paste0("up", home_score_diff),
                                                  home_score_diff < 0 ~ gsub("-", "down", home_score_diff),
                                                  TRUE ~ "tie"))
@@ -214,22 +221,22 @@ create.apm.play_by_play_data = function(play_by_play_data = NULL, players_data =
   # Create pieces of the design matrix
   # Uses xtabs converts play-by-play directly into sparse matrix form
   xh <- xtabs(~ key + player,
-              play_by_play_data = xh,
+              data = xh,
               sparse = TRUE,
               drop.unused.levels = FALSE)
   
   xa <- xtabs(~ key + player,
-              play_by_play_data = xa,
+              data = xa,
               sparse = TRUE,
               drop.unused.levels = FALSE)
   
   sh <- xtabs(~ key + home_score_diff,
-              play_by_play_data = sh,
+              data = sh,
               sparse = TRUE,
               drop.unused.levels = FALSE)
   
   sa <- xtabs(~ key + away_score_diff,
-              play_by_play_data = sa,
+              data = sa,
               sparse = TRUE,
               drop.unused.levels = FALSE)
   
@@ -253,8 +260,8 @@ create.apm.play_by_play_data = function(play_by_play_data = NULL, players_data =
   # Create vectors needed for the home indicator variable
   # 1 corresponds to home team offense, 0 is away team on offense
   n.row <- nrow(xh)
-  ones <- play_by_play_data.frame(home = rep(1, n.row)) %>% as.matrix()
-  zeros <- play_by_play_data.frame(home = rep(0, n.row)) %>% as.matrix()
+  ones <- data.frame(home = rep(1, n.row)) %>% as.matrix()
+  zeros <- data.frame(home = rep(0, n.row)) %>% as.matrix()
   
   # Create design matrix with home indicator, score effects, 
   # players on offense, and players on defense

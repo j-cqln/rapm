@@ -83,3 +83,16 @@ fit.ridge.svd <- function(X, y, lambdas) {
   
   return(list(beta = betas, lambda = best_lambda, mse = best_mse))
 }
+
+# Linear model to predict the ridge coefficients using box score statistics
+pseudo_bayes_model <- function(x, y, pure_boxscore = TRUE) {
+  if (pure_boxscore == TRUE) {
+    model <- lm(y ~ goals + assists + takeaways + giveaways, data = x)
+  } else {
+    model <- lm(y ~ total_xg + playmaking_score + takeaways + giveaways, data = x)
+  }
+  
+  predicted_values <- predict(model, newdata = x)
+  
+  return(list(model = model, predicted_values = predicted_values))
+}

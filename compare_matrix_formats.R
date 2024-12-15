@@ -1,5 +1,4 @@
 SAVE_MODELS <- FALSE
-LOAD_MODELS <- FALSE
 BENCHMARK_MODELS <- TRUE
 MATRIX_TYPE <- "C" # "C", R", "T", "dense"
 
@@ -7,17 +6,17 @@ collapse_off <- FALSE
 collapse_def <- TRUE
 from_league_avg <- TRUE
 
-## Load packages
+# Load packages
 library(SparseM)
 library(glmnet)
 library(tidyverse)
 library(microbenchmark)
 
-## Load functions
+# Load functions
 source("R/fit.R")
 source("R/extract_player_coefs.R")
 
-## Load data
+# Load data
 apm_data <- readRDS(paste0("data/apm_data_collapse_off_",
                            collapse_off,
                            "_collapse_def_",
@@ -26,12 +25,12 @@ apm_data <- readRDS(paste0("data/apm_data_collapse_off_",
                            from_league_avg,
                            ".rds"))
 
-## Extract design matrix, response vector, weights vector
+# Extract design matrix, response vector, weights vector
 X <- apm_data$x
-y <- apm_data$y[, "xg"] ## We"ll use expected goals
+y <- apm_data$y[, "xg"] # We"ll use expected goals
 w <- as.vector(apm_data$w)
 
-## Matrix type
+# Matrix type
 X <- as.matrix(X)
 
 if (MATRIX_TYPE == "C") {
@@ -42,10 +41,10 @@ if (MATRIX_TYPE == "C") {
   X <- as(X, "dgTMatrix")
 }
 
-## Center the y vector
+# Center the y vector
 yc <- y - mean(y)
 
-## Fit models
+# Fit models
 lambdas <- 10^seq(from = 2, to = -6, by = -.1)
 
 if (SAVE_MODELS) {
@@ -112,26 +111,29 @@ if (BENCHMARK_MODELS) {
                         "_timings.rds"))
 }
 
-## Extract coefficients, put into data frame, along with minutes played
-player.coeff.df <- extract.player.coefs(apm_data, ols, wols, ridge, NULL)
+# Extract coefficients, put into data frame, along with minutes played
+player_coefs <- extract.player.coefs(apm_data, ols, wols, ridge, NULL)
 
-## Save the player coefficients
-saveRDS(player.coeff.df, paste0("results/",
-                                collapse_off,
-                                "_collapse_def_",
-                                collapse_def,
-                                "_from_league_avg_",
-                                from_league_avg,
-                                "_matrix_type_",
-                                MATRIX_TYPE,
-                                "_coefs.rds"))
+# Save the player coefficients
+saveRDS(player_coefs,
+        paste0("results/collapse_off_",
+               collapse_off,
+               "_collapse_def_",
+               collapse_def,
+               "_from_league_avg_",
+               from_league_avg,
+               "_matrix_type_",
+               MATRIX_TYPE,
+               "_coefs.rds"))
 
-write.csv(player.coeff.df, paste0("results/",
-                                  collapse_off,
-                                  "_collapse_def_",
-                                  collapse_def,
-                                  "_from_league_avg_",
-                                  from_league_avg,
-                                  "_matrix_type_",
-                                  MATRIX_TYPE,
-                                  "_coefs.csv"), row.names = FALSE)
+write.csv(player_coefs,
+          paste0("results/collapse_off_",
+                 collapse_off,
+                 "_collapse_def_",
+                 collapse_def,
+                 "_from_league_avg_",
+                 from_league_avg,
+                 "_matrix_type_",
+                 MATRIX_TYPE,
+                 "_coefs.csv"),
+          row.names = FALSE)

@@ -5,6 +5,7 @@ collapse_off <- FALSE
 collapse_def <- TRUE
 from_league_avg <- TRUE
 
+# Load packages
 library(fastRhockey)
 library(SparseM)
 library(glmnet)
@@ -13,9 +14,11 @@ library(tidyverse)
 library(microbenchmark)
 library(pubtheme)
 
+# Load functions
 source("R/fit.R")
 source("R/extract_player_coefs.R")
 
+# Prepare data
 pbp <- readRDS("data/pbp.rds")
 apm_data <- readRDS(paste0("data/apm_data_collapse_off_",
                            collapse_off,
@@ -29,9 +32,13 @@ X <- apm_data$x
 y <- apm_data$y[, "xg"] ## We"ll use expected goals
 w <- as.vector(apm_data$w)
 
+# Visualize design matrix
 source("R/visualize_design_matrix.R")
 
+# Center y
 yc <- y - mean(y)
+
+# Lambdas
 lambdas <- 10^seq(from = 2, to = -6, by = -.1)
 
 if (SAVE_MODELS) {
@@ -112,10 +119,10 @@ if (BENCHMARK_MODELS) {
                         "_timings.rds"))
 }
 
-player.coeff.df <- extract.player.coefs(apm_data, ols, wols, ridge, lasso, pois)
+player_coefs <- extract.player.coefs(apm_data, ols, wols, ridge, lasso, pois)
 
-saveRDS(player.coeff.df,
-        paste0("results/",
+saveRDS(player_coefs,
+        paste0("results/collapse_off_",
                collapse_off,
                "_collapse_def_",
                collapse_def,
@@ -123,8 +130,8 @@ saveRDS(player.coeff.df,
                from_league_avg,
                "_coefs.rds"))
 
-write.csv(player.coeff.df,
-          paste0("results/",
+write.csv(player_coefs,
+          paste0("results/collapse_off_",
                  collapse_off,
                  "_collapse_def_",
                  collapse_def,
@@ -132,3 +139,5 @@ write.csv(player.coeff.df,
                  from_league_avg,
                  "_coefs.csv"),
           row.names = FALSE)
+
+# Visualize player coefficients

@@ -1,3 +1,4 @@
+# Load packages
 library(fastRhockey)
 library(Matrix)
 library(SparseM)
@@ -7,33 +8,35 @@ library(tidyverse)
 library(microbenchmark)
 library(pubtheme) ## devtools::install_github("bmacGTPM/pubtheme")
 
+# Load functions
 source("R/get_clean_nhl.R")
 source("R/create_apm_data.R")
 
-## Get data
+# Get data
 season <- 2023
-cat(paste(Sys.time(), "- Reading data...\n"));
 
-## Get play_by_play_data and player data using the fastRhockey package
-# play_by_play_raw = get.nhl.play_by_play_data(season)
-# players_raw = get.nhl.players(season)
+# Get play_by_play_data and player data using the fastRhockey package
+# play_by_play_raw <- get.nhl.play_by_play_data(season)
+# players_raw <-  get.nhl.players(season)
+# boxscore_raw <- get.nhl.player.boxscore(season)
 # saveRDS(play_by_play_raw, paste0("data/pbp_", season, ".rds"))
 # saveRDS(players_raw, paste0("data/players_", season, ".rds"))
+# saveRDS(boxscore_raw, paste0("data/boxscore_", season, ".rds"))
 play_by_play_raw <- readRDS(paste0("data/pbp_", season, ".rds"))
 players_raw <- readRDS(paste0("data/players_", season, ".rds"))
+boxscore_raw <- readRDS(paste0("data/boxscore_", season, ".rds"))
 
-## Clean data
-cat(paste(Sys.time(), "- Preparing data...\n"));
+# Clean data
 play_by_play_raw <- add.xg.to.data(play_by_play_raw)
-play_by_play_data <- clean.nhl.play_by_play_data(play_by_play_raw)
+play_by_play_data <- clean.nhl.play.by.play(play_by_play_raw)
 players_data <- clean.nhl.players(players_raw)
-boxscore <- clean.nhl.player.boxscore(play_by_play_raw)
+boxscore <- clean.nhl.player.boxscore(boxscore_raw, players_data)
 
 saveRDS(play_by_play_data, "data/play_by_play_data.rds")
 saveRDS(players_data, "data/players_data.rds")
-saveRDS(boxscore, "data/boxscore.rds")
+saveRDS(boxscore, "data/boxscore_data.rds")
 
-## Create (standard and weighted) design matrix and response vector
+# Create (standard and weighted) design matrix and response vector
 # Can collapse offense, defense, or neither (collapsing both throws error)
 collapse_off <- FALSE
 collapse_def <- FALSE
