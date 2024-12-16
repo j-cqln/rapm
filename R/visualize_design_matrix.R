@@ -114,7 +114,10 @@ gg <- g %>%
         ## we can adjust the panel spacing a little bit, if desired, and 
         ## makes the legend look like squares instead of rectangles, if desired
         panel.spacing     = unit(2/72*10/4, "in"), 
-        legend.key.width  = unit(1/72*36/4, "in")) 
+        legend.key.width  = unit(1/72*36/4, "in"),
+        plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"))
 
 print(gg)
 
@@ -131,7 +134,10 @@ gg <- g %>%
         ## we can adjust the panel spacing a little bit, if desired, and
         ## makes the legend look like squares instead of rectangles, if desired
         panel.spacing     = unit(2/72*10/4*3, "in"),
-        legend.key.width  = unit(1/72*36/4*3, "in"))
+        legend.key.width  = unit(1/72*36/4*3, "in"),
+        plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white"),
+        legend.background = element_rect(fill = "white"))
 
 ggsave(filename = paste0("img/", gsub("%", " Perc", title), ".jpg"),
        plot   = gg,
